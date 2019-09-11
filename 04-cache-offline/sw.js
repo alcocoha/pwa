@@ -3,9 +3,24 @@ console.log('hola sw')
 
 // const CACHE_NAME = 'cache-1';
 
-const CACHE_STATIC_NAME = 'static-v1';
+const CACHE_STATIC_NAME = 'static-v2';
 const CACHE_DYNAMIC_NAME = 'dynamic-v1';
 const CACHE_INMUTABLE_NAME = 'inmutable-v1';
+
+function limpiarCache( cacheName, numItems){
+    caches.open(CACHE_DYNAMIC_NAME)
+        .then(cache => {
+            return cache.keys()
+                .then( keys => {
+                    console.log('keys :', keys);
+                    if(keys.length > numItems){
+                        cache.delete(keys[0])
+                            .then( limpiarCache(cacheName, numItems) );
+                    }
+                });
+        });
+}
+
 
 // EL APP SHELL :   --- ES LO QUE LA APLICACIÓN NECESITA A FUERZA PARA QUE FUNCIONE
 
@@ -15,7 +30,7 @@ self.addEventListener('install', event => {
         .then( cache => {
 
             // Grabamos los archivos que queremos en el cache
-            return cache.addAll([
+            return cache.addAll([ // este es el APP SHELL
                 '/',
                 '/index.html',
                 '/css/style.css',
@@ -57,16 +72,17 @@ self.addEventListener('fetch', event => {
 
             if( resp ) return resp;
 
-            console.log('No existe ', event.request.url )
+            // console.log('No existe ', event.request.url )
 
             return fetch( event.request )
                     .then(respNet => {
 
-                        console.log('respNet', respNet);
+                        // console.log('respNet', respNet);
 
                         caches.open(CACHE_DYNAMIC_NAME)
                             .then(cache => {
                                 cache.put(event.request, respNet);
+                                limpiarCache( CACHE_DYNAMIC_NAME, 2);
                             });
                         
                         return respNet.clone();
