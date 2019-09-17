@@ -7,6 +7,20 @@ const CACHE_STATIC_NAME = 'static-v1';
 const CACHE_DYNAMIC_NAME = 'dynamic-v1';
 const CACHE_INMUTABLE_NAME = 'inmutable-v1';
 
+function limpiarCache(cacheName, numItems){
+    caches.open(cacheName)
+        .then(cache => {
+            return cache.keys()
+                        .then( keys => {
+                            console.log('keys:------', keys)
+                            if(keys.length > numItems){
+                                cache.delete(keys[0])
+                                    .then( limpiarCache(cacheName, numItems) );
+                            }
+                        });
+        })
+}
+
 // EL APP SHELL :   --- ES LO QUE LA APLICACIÓN NECESITA A FUERZA PARA QUE FUNCIONE
 
 self.addEventListener('install', event => {
@@ -37,7 +51,7 @@ self.addEventListener('install', event => {
 
         });
 
-        event.waitUntil( Promise.all([cacheStatic, cacheInmutable]) );
+    event.waitUntil( Promise.all([cacheStatic, cacheInmutable]) );
 
 });
 
@@ -67,6 +81,7 @@ self.addEventListener('fetch', event => {
                         caches.open(CACHE_DYNAMIC_NAME)
                             .then(cache => {
                                 cache.put(event.request, respNet);
+                                limpiarCache(CACHE_DYNAMIC_NAME, 3);
                             });
                         
                         return respNet.clone();
